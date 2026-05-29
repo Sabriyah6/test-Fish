@@ -1,0 +1,21 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Upload files
+backend/uploads/
+
+# Virtual environment
+venv/
+
+# VS Code
+.vscode/
+
+# System files
+.DS_Store
+
+# TensorFlow logs
+logs/
+
+# Environment
+.env
