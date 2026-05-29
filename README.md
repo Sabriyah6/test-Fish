@@ -2,6 +2,12 @@
 
 Sistem klasifikasi spesies dan kesegaran ikan berbasis Artificial Intelligence menggunakan Flask dan TensorFlow.
 
+## Kelompok BISMILLAH LOLOS UAS
+**ANGGOTA**
+- ELFA DWI CAHYANI 2301020023 **(KETUA)**
+- SABRIYAH 2301020023
+- AUREL JIHAN FAHRISTY 2301020013
+
 ## Fitur
 
 - Klasifikasi spesies ikan
