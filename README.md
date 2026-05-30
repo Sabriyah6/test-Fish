@@ -5,8 +5,8 @@ Sistem klasifikasi spesies dan kesegaran ikan berbasis Artificial Intelligence m
 ## Kelompok BISMILLAH LOLOS UAS
 **ANGGOTA**
 - ELFA DWI CAHYANI 2301020021 **(KETUA)**
-- SABRIYAH 2301020023
 - AUREL JIHAN FAHRISTY 2301020013
+- SABRIYAH 2301020023
 
 ## Fitur
 
@@ -26,7 +26,6 @@ Sistem klasifikasi spesies dan kesegaran ikan berbasis Artificial Intelligence m
 
 ## Struktur Project
 
-- Backend Flask API
 - Model AI TensorFlow
 - Frontend HTML CSS JavaScript
 
