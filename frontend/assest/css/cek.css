@@ -56,7 +56,7 @@ body {
   overflow-x: hidden;
   width: 100%;
   background-image: linear-gradient(180deg, rgba(238, 246, 255, 0.388) 0%, rgba(238, 246, 255, 0.95) 100%),
-    url('/frontend/assest/img/laut.png');
+    url('/assest/img/laut.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
