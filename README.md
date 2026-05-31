@@ -13,7 +13,6 @@ Sistem klasifikasi spesies dan kesegaran ikan berbasis Artificial Intelligence m
 - Klasifikasi spesies ikan
 - Deteksi kesegaran ikan
 - Upload gambar ikan
-- REST API backend
 - Gatekeeper validation
 
 ## Teknologi
