@@ -1,6 +1,6 @@
 Flask
 flask-cors
-tensorflow-cpu
+tensorflow
 numpy
 pillow
 h5py
