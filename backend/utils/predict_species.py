@@ -20,6 +20,9 @@ def patched_input_init(self, *args, **kwargs):
             kwargs['input_shape'] = batch_shape[1:]
     if 'optional' in kwargs:
         kwargs.pop('optional')
+    # Paksa tipe data internal agar berupa objek Keras DataType, bukan string mentah
+    if 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
+        kwargs['dtype'] = tf.as_dtype(kwargs['dtype'])
     original_input_init(self, *args, **kwargs)
 InputLayer.__init__ = patched_input_init
 
