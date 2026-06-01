@@ -8,10 +8,15 @@ from utils.labels import SPECIES_LABELS
 from config import Config
 
 # =====================================================================
-# TAMENG LAPIS BAJA (SUPER PATCH): AMANKAN KERAS 3 DI LINGKUNGAN RENDER
+# ULTIMATE COMPATIBILITY PATCH: MENJINAKKAN KEBUTUHAN AS_LIST PADA KERAS 2
 # =====================================================================
 
-# 1. Patch Spesifik untuk InputLayer (Mengatasi batch_shape & optional)
+# 1. Buat kelas string buatan yang meniru objek tipe data dengan fungsi .as_list()
+class Keras2StringCompat(str):
+    def as_list(self):
+        return [self]
+
+# 2. Cegat inisialisasi InputLayer secara spesifik
 original_input_init = InputLayer.__init__
 def patched_input_init(self, *args, **kwargs):
     if 'batch_shape' in kwargs:
@@ -20,21 +25,23 @@ def patched_input_init(self, *args, **kwargs):
             kwargs['input_shape'] = batch_shape[1:]
     if 'optional' in kwargs:
         kwargs.pop('optional')
-    # Paksa tipe data internal agar berupa objek Keras DataType, bukan string mentah
+        
+    # Jika tipenya string teks biasa ('float32'), bungkus dengan kelas kompatibilitas kita
     if 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
-        kwargs['dtype'] = tf.as_dtype(kwargs['dtype'])
+        kwargs['dtype'] = Keras2StringCompat(kwargs['dtype'])
+        
     original_input_init(self, *args, **kwargs)
 InputLayer.__init__ = patched_input_init
 
-# 2. Patch Global untuk Seluruh Lapisan Lain (Mengatasi DTypePolicy & Quantization)
+# 3. Cegat inisialisasi seluruh lapisan dasar arsitektur (Conv2D, BatchNorm, dll)
 original_layer_init = Layer.__init__
 def patched_layer_init(self, *args, **kwargs):
-    # Bersihkan masalah DTypePolicy di semua jenis lapisan (Conv2D, BatchNormalization, Dense, dll)
     if 'dtype' in kwargs and isinstance(kwargs['dtype'], dict):
         dtype_config = kwargs['dtype'].get('config', {})
-        kwargs['dtype'] = dtype_config.get('name', 'float32')
+        kwargs['dtype'] = Keras2StringCompat(dtype_config.get('name', 'float32'))
+    elif 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
+        kwargs['dtype'] = Keras2StringCompat(kwargs['dtype'])
         
-    # Buang parameter Keras 3 yang tidak dikenali Keras 2
     if 'quantization_config' in kwargs:
         kwargs.pop('quantization_config')
     if 'optional' in kwargs:
