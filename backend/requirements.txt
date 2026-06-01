@@ -1,7 +1,7 @@
 Flask
 flask-cors
-tensorflow-cpu==2.15.0
-numpy<2.0.0
+tensorflow-cpu
+numpy
 pillow
 h5py
 gunicorn
