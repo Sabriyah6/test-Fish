@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, InputLayer
 import numpy as np
 
 from utils.preprocess import preprocess_image
@@ -8,23 +8,31 @@ from utils.labels import SPECIES_LABELS
 from config import Config
 
 # =====================================================================
-# PATCH TRIK UNTUK BYPASS EROR QUANTIZATION_CONFIG DI RENDER
+# PATCH TRIK MASTER UNTUK BYPASS EROR KERAS 3 DI LINGKUNGAN RENDER
 # =====================================================================
-# Kita simpan fungsi inisialisasi asli milik lapisan Dense
+# 1. Patch untuk Lapisan Dense (Mengatasi quantization_config)
 original_dense_init = Dense.__init__
-
 def patched_dense_init(self, *args, **kwargs):
-    # Jika parameter pengganggu terdeteksi dari file .h5, kita buang paksa
     if 'quantization_config' in kwargs:
         kwargs.pop('quantization_config')
-    # Jalankan inisialisasi bawaan Keras tanpa parameter pengganggu
     original_dense_init(self, *args, **kwargs)
-
-# Ganti constructor bawaan dengan fungsi patch kita
 Dense.__init__ = patched_dense_init
+
+# 2. Patch untuk Lapisan InputLayer (Mengatasi batch_shape & optional)
+original_input_init = InputLayer.__init__
+def patched_input_init(self, *args, **kwargs):
+    # Keras 2 menggunakan 'input_shape' bukan 'batch_shape'
+    if 'batch_shape' in kwargs:
+        batch_shape = kwargs.pop('batch_shape')
+        if batch_shape and len(batch_shape) > 1:
+            kwargs['input_shape'] = batch_shape[1:]  # Ambil [224, 224, 3]
+    if 'optional' in kwargs:
+        kwargs.pop('optional')
+    original_input_init(self, *args, **kwargs)
+InputLayer.__init__ = patched_input_init
 # =====================================================================
 
-# Load model sekali saja saat server start (Aman dari eror versi Keras)
+# Load model (Sekarang aman dari pemeriksaan InputLayer dan Dense)
 model = load_model(Config.SPECIES_MODEL_PATH, compile=False)
 
 def predict_species(img_path):
