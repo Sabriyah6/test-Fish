@@ -8,15 +8,10 @@ from utils.labels import SPECIES_LABELS
 from config import Config
 
 # =====================================================================
-# ULTIMATE COMPATIBILITY PATCH: MENJINAKKAN KEBUTUHAN AS_LIST PADA KERAS 2
+# PATCH COMPATIBILITY BACKEND: UTK MODEL KERAS 3 DI LINGKUNGAN KERAS 2
 # =====================================================================
 
-# 1. Buat kelas string buatan yang meniru objek tipe data dengan fungsi .as_list()
-class Keras2StringCompat(str):
-    def as_list(self):
-        return [self]
-
-# 2. Cegat inisialisasi InputLayer secara spesifik
+# 1. Amankan InputLayer (Mengonversi string konfigurasi ke Objek DataType Resmi)
 original_input_init = InputLayer.__init__
 def patched_input_init(self, *args, **kwargs):
     if 'batch_shape' in kwargs:
@@ -26,21 +21,22 @@ def patched_input_init(self, *args, **kwargs):
     if 'optional' in kwargs:
         kwargs.pop('optional')
         
-    # Jika tipenya string teks biasa ('float32'), bungkus dengan kelas kompatibilitas kita
+    # Mengubah string menjadi objek tipe data resmi TensorFlow agar memiliki metode .as_list()
     if 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
-        kwargs['dtype'] = Keras2StringCompat(kwargs['dtype'])
+        kwargs['dtype'] = tf.as_dtype(kwargs['dtype'])
         
     original_input_init(self, *args, **kwargs)
 InputLayer.__init__ = patched_input_init
 
-# 3. Cegat inisialisasi seluruh lapisan dasar arsitektur (Conv2D, BatchNorm, dll)
+# 2. Amankan Seluruh Lapisan Lain (Conv2D, BatchNormalization, Dense, dll)
 original_layer_init = Layer.__init__
 def patched_layer_init(self, *args, **kwargs):
     if 'dtype' in kwargs and isinstance(kwargs['dtype'], dict):
         dtype_config = kwargs['dtype'].get('config', {})
-        kwargs['dtype'] = Keras2StringCompat(dtype_config.get('name', 'float32'))
+        dtype_name = dtype_config.get('name', 'float32')
+        kwargs['dtype'] = tf.as_dtype(dtype_name)
     elif 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
-        kwargs['dtype'] = Keras2StringCompat(kwargs['dtype'])
+        kwargs['dtype'] = tf.as_dtype(kwargs['dtype'])
         
     if 'quantization_config' in kwargs:
         kwargs.pop('quantization_config')
@@ -51,7 +47,7 @@ def patched_layer_init(self, *args, **kwargs):
 Layer.__init__ = patched_layer_init
 # =====================================================================
 
-# Load model secara aman tanpa kompilasi beban metrik lama
+# Load model milik Elfa secara aman di Backend
 model = load_model(Config.SPECIES_MODEL_PATH, compile=False)
 
 def predict_species(img_path):
