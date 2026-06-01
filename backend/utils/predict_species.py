@@ -8,20 +8,44 @@ from utils.labels import SPECIES_LABELS
 from config import Config
 
 # =====================================================================
-# TAMENG BACKEND PAMUNGKAS: SUNTIKKAN AS_LIST() LANGSUNG KE KELAS STR DASAR
-# =====================================================================
-def string_as_list(self):
-    """
-    Suntikan paksa agar tipe data teks (str) apa pun di Python 
-    memiliki metode .as_list() ketika dipanggil oleh rekonstruksi internal Keras.
-    """
-    return [self]
-
-# Menambahkan fungsi .as_list() secara runtime ke dalam kelas 'str' bawaan Python
-str.as_list = string_as_list
+# PATCH PASUKAN BACKEND: CEGAT PROSES DESERIALISASI INTERNAL KERAS
 # =====================================================================
 
-# Load model secara aman di Backend tanpa gangguan ketidakcocokan framework
+# 1. Buat kelas string kustom yang ramah terhadap pemanggilan .as_list()
+class SafeKerasStr(str):
+    def as_list(self):
+        return [self]
+
+# 2. Bajak metode inisialisasi Layer internal TensorFlow secara aman
+from tensorflow.keras.layers import Layer, InputLayer
+
+original_layer_init = Layer.__init__
+def patched_layer_init(self, *args, **kwargs):
+    # Jika parameter dtype terdeteksi berbentuk string biasa, bungkus dengan SafeKerasStr
+    if 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
+        kwargs['dtype'] = SafeKerasStr(kwargs['dtype'])
+    if 'quantization_config' in kwargs:
+        kwargs.pop('quantization_config')
+    if 'optional' in kwargs:
+        kwargs.pop('optional')
+    original_layer_init(self, *args, **kwargs)
+Layer.__init__ = patched_layer_init
+
+original_input_init = InputLayer.__init__
+def patched_input_init(self, *args, **kwargs):
+    if 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
+        kwargs['dtype'] = SafeKerasStr(kwargs['dtype'])
+    if 'batch_shape' in kwargs:
+        batch_shape = kwargs.pop('batch_shape')
+        if batch_shape and len(batch_shape) > 1:
+            kwargs['input_shape'] = batch_shape[1:]
+    if 'optional' in kwargs:
+        kwargs.pop('optional')
+    original_input_init(self, *args, **kwargs)
+InputLayer.__init__ = patched_input_init
+# =====================================================================
+
+# Load model milik Elfa secara aman di Backend
 model = load_model(Config.SPECIES_MODEL_PATH, compile=False)
 
 def predict_species(img_path):
