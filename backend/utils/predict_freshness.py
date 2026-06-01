@@ -5,7 +5,7 @@ from utils.preprocess import preprocess_image
 from config import Config
 
 # Load model sekali saja saat server start
-model = load_model(Config.FRESHNESS_MODEL_PATH)
+model = load_model(Config.FRESHNESS_MODEL_PATH, compile=False)
 
 def predict_freshness(img_path):
     """
