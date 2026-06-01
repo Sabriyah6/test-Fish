@@ -8,7 +8,7 @@ from utils.labels import SPECIES_LABELS
 from config import Config
 
 # =====================================================================
-# PATCH PASUKAN BACKEND: CEGAT PROSES DESERIALISASI INTERNAL KERAS
+# PATCH PASUKAN BACKEND: CEGAT DESERIALISASI & DAFTARKAN DTYPEPOLICY
 # =====================================================================
 
 # 1. Buat kelas string kustom yang ramah terhadap pemanggilan .as_list()
@@ -16,12 +16,20 @@ class SafeKerasStr(str):
     def as_list(self):
         return [self]
 
-# 2. Bajak metode inisialisasi Layer internal TensorFlow secara aman
+# 2. Buat kelas tiruan DTypePolicy agar Keras lama mengenalnya sebagai tipe data biasa
+class FakeDTypePolicy:
+    def __init__(self, *args, **kwargs):
+        # Ambil nama config jika ada, jika tidak default ke float32
+        config = kwargs.get('config', {})
+        self.name = config.get('name', 'float32') if isinstance(config, dict) else 'float32'
+    def __getattr__(self, name):
+        return 'float32'
+
+# 3. Bajak metode inisialisasi Layer internal TensorFlow secara aman
 from tensorflow.keras.layers import Layer, InputLayer
 
 original_layer_init = Layer.__init__
 def patched_layer_init(self, *args, **kwargs):
-    # Jika parameter dtype terdeteksi berbentuk string biasa, bungkus dengan SafeKerasStr
     if 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
         kwargs['dtype'] = SafeKerasStr(kwargs['dtype'])
     if 'quantization_config' in kwargs:
@@ -45,8 +53,11 @@ def patched_input_init(self, *args, **kwargs):
 InputLayer.__init__ = patched_input_init
 # =====================================================================
 
-# Load model milik Elfa secara aman di Backend
-model = load_model(Config.SPECIES_MODEL_PATH, compile=False)
+# 4. Bungkus proses load_model dengan custom_object_scope agar mengenali DTypePolicy
+from tensorflow.keras.utils import custom_object_scope
+
+with custom_object_scope({'DTypePolicy': FakeDTypePolicy}):
+    model = load_model(Config.SPECIES_MODEL_PATH, compile=False)
 
 def predict_species(img_path):
     """
