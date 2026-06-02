@@ -1,61 +1,50 @@
 import sys
 import tensorflow as tf
-from tensorflow.keras.models import load_model
 import numpy as np
 
-from utils.preprocess import preprocess_image
-from utils.labels import SPECIES_LABELS
-from config import Config
-
 # =====================================================================
-# PATCH PASUKAN BACKEND: CEGAT DESERIALISASI & DAFTARKAN DTYPEPOLICY
+# AGGRESSIVE MONKEY PATCH: BAJAK FUNGSI INTERNAL REKONSTRUKSI KERAS
 # =====================================================================
+try:
+    # Paksa muat modul functional Keras sebelum load_model dieksekusi
+    import keras.src.engine.functional as keras_functional
+    
+    # Simpan fungsi asli bawaan Keras
+    original_process_node = keras_functional.process_node
 
-# 1. Buat kelas string kustom yang ramah terhadap pemanggilan .as_list()
-class SafeKerasStr(str):
-    def as_list(self):
-        return [self]
+    def patched_process_node(node, layer_dict, dictionary):
+        """
+        Cegat proses rekonstruksi node secara global.
+        Jika input data terdeteksi berupa string biasa saat pemrosesan,
+        konversi secara otomatis menjadi list agar tidak memicu error .as_list().
+        """
+        if hasattr(node, 'input_tensors'):
+            inputs = node.input_tensors
+            if isinstance(inputs, str):
+                node.input_tensors = [inputs]
+        return original_process_node(node, layer_dict, dictionary)
 
-# 2. Buat kelas tiruan DTypePolicy agar Keras lama mengenalnya sebagai tipe data biasa
+    # Ganti fungsi asli Keras dengan fungsi tameng buatan kita
+    keras_functional.process_node = patched_process_node
+except Exception:
+    pass
+
+# Definisikan kelas tiruan untuk DTypePolicy agar aman dari skema Keras 3
 class FakeDTypePolicy:
     def __init__(self, *args, **kwargs):
-        # Ambil nama config jika ada, jika tidak default ke float32
         config = kwargs.get('config', {})
         self.name = config.get('name', 'float32') if isinstance(config, dict) else 'float32'
     def __getattr__(self, name):
         return 'float32'
-
-# 3. Bajak metode inisialisasi Layer internal TensorFlow secara aman
-from tensorflow.keras.layers import Layer, InputLayer
-
-original_layer_init = Layer.__init__
-def patched_layer_init(self, *args, **kwargs):
-    if 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
-        kwargs['dtype'] = SafeKerasStr(kwargs['dtype'])
-    if 'quantization_config' in kwargs:
-        kwargs.pop('quantization_config')
-    if 'optional' in kwargs:
-        kwargs.pop('optional')
-    original_layer_init(self, *args, **kwargs)
-Layer.__init__ = patched_layer_init
-
-original_input_init = InputLayer.__init__
-def patched_input_init(self, *args, **kwargs):
-    if 'dtype' in kwargs and isinstance(kwargs['dtype'], str):
-        kwargs['dtype'] = SafeKerasStr(kwargs['dtype'])
-    if 'batch_shape' in kwargs:
-        batch_shape = kwargs.pop('batch_shape')
-        if batch_shape and len(batch_shape) > 1:
-            kwargs['input_shape'] = batch_shape[1:]
-    if 'optional' in kwargs:
-        kwargs.pop('optional')
-    original_input_init(self, *args, **kwargs)
-InputLayer.__init__ = patched_input_init
 # =====================================================================
 
-# 4. Bungkus proses load_model dengan custom_object_scope agar mengenali DTypePolicy
+from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import custom_object_scope
+from utils.preprocess import preprocess_image
+from utils.labels import SPECIES_LABELS
+from config import Config
 
+# Muat model secara aman dengan mendaftarkan semua komponen kustom
 with custom_object_scope({'DTypePolicy': FakeDTypePolicy}):
     model = load_model(Config.SPECIES_MODEL_PATH, compile=False)
 
