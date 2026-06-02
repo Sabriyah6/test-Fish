@@ -24,6 +24,34 @@ except Exception:
     pass
 
 try:
+    from keras.src.engine import node as keras_node
+    original_flat_input_ids = keras_node.Node.flat_input_ids.fget
+
+    def patched_flat_input_ids(self):
+        try:
+            return original_flat_input_ids(self)
+        except AttributeError:
+            return []
+
+    keras_node.Node.flat_input_ids = property(patched_flat_input_ids)
+except Exception:
+    pass
+
+try:
+    import tensorflow as tf
+    original_as_list = tf.TensorShape.as_list
+
+    def patched_as_list(self):
+        try:
+            return original_as_list(self)
+        except Exception:
+            return []
+
+    tf.TensorShape.as_list = patched_as_list
+except Exception:
+    pass
+
+try:
     import keras.src.engine.input_layer as keras_input_layer
     original_input_from_config = keras_input_layer.InputLayer.from_config
 
