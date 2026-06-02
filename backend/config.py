@@ -17,8 +17,8 @@ class Config:
     KNOWN_SPECIES = ["Horse Mackerel", "Red Sea Bream", "Sea Bass"]
 
     # Model paths
-    SPECIES_MODEL_PATH = 'models/model_spesies_terbaik_final.h5'
-    FRESHNESS_MODEL_PATH = 'models/best_freshness_model.h5'
+    SPECIES_MODEL_PATH = 'models/model_spesies_v2.h5'
+    FRESHNESS_MODEL_PATH = 'models/freshness_v2.h5'
 
     # Allowed extensions
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
