@@ -4,16 +4,17 @@ from tensorflow.keras.models import load_model
 from utils.preprocess import preprocess_image
 from config import Config
 
-# Patch BatchNormalization agar toleran parameter lama
-_orig_bn_init = keras.layers.BatchNormalization.__init__
+# Patch universal: buang semua parameter asing dari SEMUA layer
+_orig_base_init = keras.layers.Layer.__init__
 
-def _patched_bn_init(self, **kwargs):
+def _patched_base_init(self, **kwargs):
     kwargs.pop('renorm', None)
     kwargs.pop('renorm_clipping', None)
     kwargs.pop('renorm_momentum', None)
-    _orig_bn_init(self, **kwargs)
+    kwargs.pop('quantization_config', None)
+    _orig_base_init(self, **kwargs)
 
-keras.layers.BatchNormalization.__init__ = _patched_bn_init
+keras.layers.Layer.__init__ = _patched_base_init
 
 _model = None
 
