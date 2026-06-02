@@ -1,14 +1,26 @@
 import numpy as np
 from tensorflow.keras.models import load_model
+from tensorflow.keras.layers import BatchNormalization
 from utils.preprocess import preprocess_image
 from config import Config
+
+class CompatBatchNorm(BatchNormalization):
+    def __init__(self, **kwargs):
+        kwargs.pop('renorm', None)
+        kwargs.pop('renorm_clipping', None)
+        kwargs.pop('renorm_momentum', None)
+        super().__init__(**kwargs)
 
 _model = None
 
 def get_model():
     global _model
     if _model is None:
-        _model = load_model(Config.FRESHNESS_MODEL_PATH, compile=False)
+        _model = load_model(
+            Config.FRESHNESS_MODEL_PATH,
+            custom_objects={'BatchNormalization': CompatBatchNorm},
+            compile=False
+        )
     return _model
 
 def predict_freshness(img_path):
