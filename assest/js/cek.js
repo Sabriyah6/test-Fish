@@ -1,8 +1,5 @@
-
-
-const API_URL = 'http://127.0.0.1:5000/predict';
-
-
+// SESUDAH (production)
+const API_URL = 'https://backend-fish-freshness.onrender.com/predict';
 
 const dropZone = document.getElementById('dropZone');
 
