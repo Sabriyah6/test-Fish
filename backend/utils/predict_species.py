@@ -1,28 +1,27 @@
 import numpy as np
+import keras
 from tensorflow.keras.models import load_model
-from tensorflow.keras.layers import BatchNormalization
 from utils.preprocess import preprocess_image
 from utils.labels import SPECIES_LABELS
 from config import Config
 
-# Custom BatchNormalization yang toleran terhadap parameter lama
-class CompatBatchNorm(BatchNormalization):
-    def __init__(self, **kwargs):
-        kwargs.pop('renorm', None)
-        kwargs.pop('renorm_clipping', None)
-        kwargs.pop('renorm_momentum', None)
-        super().__init__(**kwargs)
+# Patch BatchNormalization agar toleran parameter lama
+_orig_bn_init = keras.layers.BatchNormalization.__init__
+
+def _patched_bn_init(self, **kwargs):
+    kwargs.pop('renorm', None)
+    kwargs.pop('renorm_clipping', None)
+    kwargs.pop('renorm_momentum', None)
+    _orig_bn_init(self, **kwargs)
+
+keras.layers.BatchNormalization.__init__ = _patched_bn_init
 
 _model = None
 
 def get_model():
     global _model
     if _model is None:
-        _model = load_model(
-            Config.SPECIES_MODEL_PATH,
-            custom_objects={'BatchNormalization': CompatBatchNorm},
-            compile=False
-        )
+        _model = load_model(Config.SPECIES_MODEL_PATH, compile=False)
     return _model
 
 def predict_species(img_path):
