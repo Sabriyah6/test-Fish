@@ -19,3 +19,6 @@ logs/
 
 # Environment
 .env
+
+# Script konversi model (sekali pakai)
+convert_model.py
