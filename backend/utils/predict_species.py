@@ -3,33 +3,45 @@ import tensorflow as tf
 import numpy as np
 
 # =====================================================================
-# AGGRESSIVE MONKEY PATCH: BAJAK FUNGSI INTERNAL REKONSTRUKSI KERAS
+# MONKEY PATCH AMAN: PENJINAK STRUKTUR SKEMA MODEL KERAS GLOBAL
 # =====================================================================
 try:
-    # Paksa muat modul functional Keras sebelum load_model dieksekusi
+    # 1. Bajak fungsi process_node untuk mengatasi masalah string dan as_list
     import keras.src.engine.functional as keras_functional
-    
-    # Simpan fungsi asli bawaan Keras
     original_process_node = keras_functional.process_node
 
     def patched_process_node(node, layer_dict, dictionary):
-        """
-        Cegat proses rekonstruksi node secara global.
-        Jika input data terdeteksi berupa string biasa saat pemrosesan,
-        konversi secara otomatis menjadi list agar tidak memicu error .as_list().
-        """
         if hasattr(node, 'input_tensors'):
             inputs = node.input_tensors
             if isinstance(inputs, str):
                 node.input_tensors = [inputs]
         return original_process_node(node, layer_dict, dictionary)
 
-    # Ganti fungsi asli Keras dengan fungsi tameng buatan kita
     keras_functional.process_node = patched_process_node
 except Exception:
     pass
 
-# Definisikan kelas tiruan untuk DTypePolicy agar aman dari skema Keras 3
+try:
+    # 2. Bajak fungsi deseralisasi InputLayer untuk membuang keyword asing
+    import keras.src.engine.input_layer as keras_input_layer
+    original_input_from_config = keras_input_layer.InputLayer.from_config
+
+    @classmethod
+    def patched_from_config(cls, config):
+        # Bersihkan parameter baru yang tidak dikenali Keras versi lama
+        if 'batch_shape' in config:
+            batch_shape = config.pop('batch_shape')
+            if batch_shape and len(batch_shape) > 1:
+                config['input_shape'] = batch_shape[1:]
+        if 'optional' in config:
+            config.pop('optional')
+        return original_input_from_config(config)
+
+    keras_input_layer.InputLayer.from_config = patched_from_config
+except Exception:
+    pass
+
+# Kelas tiruan DTypePolicy agar aman dari skema Keras 3
 class FakeDTypePolicy:
     def __init__(self, *args, **kwargs):
         config = kwargs.get('config', {})
@@ -44,7 +56,7 @@ from utils.preprocess import preprocess_image
 from utils.labels import SPECIES_LABELS
 from config import Config
 
-# Muat model secara aman dengan mendaftarkan semua komponen kustom
+# Memuat model secara aman menggunakan ruang objek kustom
 with custom_object_scope({'DTypePolicy': FakeDTypePolicy}):
     model = load_model(Config.SPECIES_MODEL_PATH, compile=False)
 
