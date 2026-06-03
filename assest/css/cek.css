@@ -1335,3 +1335,54 @@ nav {
     font-size: 24px;
   }
 }
+
+.feature-section {
+    margin-bottom: 48px;
+}
+
+.section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.section-header h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+}
+
+.section-header p {
+    font-size: 0.9rem;
+    color: var(--gray-400);
+    margin: 0;
+}
+
+.section-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.badge-blue {
+    background: rgba(78, 203, 223, 0.15);
+    color: #4ecbdf;
+}
+
+.badge-green {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+}
+
+.dot-green {
+    background: #34d399;
+}
+
+.btn-green {
+    background: linear-gradient(135deg, #34d399, #059669) !important;
+}
