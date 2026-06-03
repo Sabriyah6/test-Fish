@@ -179,6 +179,12 @@ function renderFreshnessResult(data) {
                         <div style="font-size:12px;color:var(--gray-400);margin-top:4px;">Kepercayaan: ${data.confidence}</div>
                     </div>
                 </div>
+            </div>
+            <div class="result-metric">
+                <div style="width:100%">
+                    <div class="metric-label">Terdeteksi dari</div>
+                    <div class="metric-value">${data.part || '—'}</div>
+                </div>
             </div>`;
         requestAnimationFrame(() => setTimeout(() => {
             const el = document.getElementById('fillFreshness');

@@ -4,7 +4,6 @@ from tensorflow.keras.models import load_model
 from utils.preprocess import preprocess_image
 from config import Config
 
-# Patch universal: buang semua parameter asing dari SEMUA layer
 _orig_base_init = keras.layers.Layer.__init__
 
 def _patched_base_init(self, **kwargs):
@@ -15,6 +14,9 @@ def _patched_base_init(self, **kwargs):
     _orig_base_init(self, **kwargs)
 
 keras.layers.Layer.__init__ = _patched_base_init
+
+# 4 label sesuai urutan kelas model
+FRESHNESS_LABELS = ['eye-fresh', 'eye-non-fresh', 'gill-fresh', 'gill-non-fresh']
 
 _model = None
 
@@ -27,11 +29,20 @@ def get_model():
 def predict_freshness(img_path):
     model = get_model()
     processed_image = preprocess_image(img_path)
-    raw_score = float(model.predict(processed_image)[0][0])
-    if raw_score >= 0.5:
-        freshness = "Fresh"
-        confidence = raw_score
+    prediction = model.predict(processed_image)
+
+    predicted_index = int(np.argmax(prediction))
+    confidence = float(np.max(prediction))
+    label = FRESHNESS_LABELS[predicted_index]
+
+    if 'non' in label:
+        freshness = 'Non-Fresh'
     else:
-        freshness = "Non-Fresh"
-        confidence = 1.0 - raw_score
-    return freshness, confidence
+        freshness = 'Fresh'
+
+    if 'eye' in label:
+        part = 'Mata'
+    else:
+        part = 'Insang'
+
+    return freshness, confidence, part

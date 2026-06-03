@@ -107,8 +107,8 @@ def predict_freshness_route():
     filepath = save_temp_file(file)
 
     try:
-        freshness, confidence = predict_freshness(filepath)
-        print(f"[Freshness] {freshness} | {confidence:.2%}")
+        freshness, confidence, part = predict_freshness(filepath)
+        print(f"[Freshness] {freshness} ({part}) | {confidence:.2%}")
 
         if not is_confident_freshness(confidence):
             return jsonify({
@@ -121,7 +121,8 @@ def predict_freshness_route():
         return jsonify({
             'status': 'success',
             'freshness': freshness,
-            'confidence': f'{confidence:.2%}'
+            'confidence': f'{confidence:.2%}',
+            'part': part
         }), 200
 
     except Exception as e:
