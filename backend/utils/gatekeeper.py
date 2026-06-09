@@ -15,12 +15,11 @@ def is_valid_extension(filename):
 def is_confident_species(confidence):
     """
     Filter 1: Cek apakah model cukup yakin dengan prediksi spesiesnya.
-    Jika confidence di bawah threshold, dianggap bukan ikan yang dikenal.
-    Ini menangkap: ikan jenis lain, foto bukan ikan, atau foto blur/tidak jelas.
-    Threshold tinggi (misal 0.95) digunakan untuk mencegah model memaksakan
-    prediksi pada ikan yang bukan 3 target utama.
+    Diubah menjadi 0.999 (99.9%) agar foto objek non-ikan seperti buaya (99.85%) 
+    atau benda acak lainnya otomatis ditolak oleh sistem.
     """
-    return confidence >= Config.SPECIES_CONFIDENCE_THRESHOLD
+    # Mengabaikan threshold config lama dan langsung menguncinya ke 0.999
+    return confidence >= 0.999
 
 
 def is_known_species(species_label):
@@ -37,4 +36,5 @@ def is_confident_freshness(confidence):
     Filter 3: Cek apakah model freshness cukup yakin.
     Menghindari hasil kesegaran yang meragukan.
     """
-    return confidence >= Config.FRESHNESS_CONFIDENCE_THRESHOLD
+    # Diubah menjadi 0.995 (99.5%) agar deteksi kesegaran mata/insang juga lebih ketat
+    return confidence >= 0.995
