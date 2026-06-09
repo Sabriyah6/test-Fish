@@ -43,7 +43,7 @@ def predict_freshness(img_path):
     print(f"[Freshness] Entropy: {normalized_entropy:.4f} | Confidence: {confidence:.2%}")
 
     # Kalau entropy > 0.8 berarti model tidak yakin → paksa confidence rendah
-    if normalized_entropy > 0.3:
+    if normalized_entropy > 0.8:
         confidence = 0.0
 
     label = FRESHNESS_LABELS[predicted_index]
