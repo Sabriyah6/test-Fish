@@ -33,6 +33,19 @@ def predict_freshness(img_path):
 
     predicted_index = int(np.argmax(prediction))
     confidence = float(np.max(prediction))
+
+    # Cek entropy — kalau model bingung (gambar bukan mata/insang), entropy tinggi
+    probs = prediction[0]
+    entropy = -np.sum(probs * np.log(probs + 1e-10))
+    max_entropy = np.log(len(probs))
+    normalized_entropy = entropy / max_entropy
+
+    print(f"[Freshness] Entropy: {normalized_entropy:.4f} | Confidence: {confidence:.2%}")
+
+    # Kalau entropy > 0.8 berarti model tidak yakin → paksa confidence rendah
+    if normalized_entropy > 0.8:
+        confidence = 0.0
+
     label = FRESHNESS_LABELS[predicted_index]
 
     if 'non' in label:
